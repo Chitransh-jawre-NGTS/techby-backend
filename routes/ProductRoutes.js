@@ -45,7 +45,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/upload");
-const productController = require("../controllers/productController");
+const productController = require("../controllers/ProductController");
 const sellerAuth = require("../middleware/AuthMiddleware");
 
 // Protected seller routes
