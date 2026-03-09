@@ -161,14 +161,6 @@
 
 
 
-
-
-
-
-const Product = require("../models/Product");
-const cloudinary = require("../config/cloudinary");
-const streamifier = require("streamifier");
-
 // ---------------- GET ALL PRODUCTS ----------------
 // const getAllProducts = async (req, res) => {
 //   try {
@@ -179,10 +171,35 @@ const streamifier = require("streamifier");
 //   }
 // };
 
-// ---------------- GET PRODUCT BY ID ----------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const Product = require("../models/Product");
+const cloudinary = require("../config/cloudinary");
+const streamifier = require("streamifier");
+
+
+
+// ---------------- GET PRODUCT BY ID WITH SELLER DETAILS ----------------
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    // Populate seller info (shopName, logo)
+    const product = await Product.findById(req.params.id).populate(
+      "sellerId",
+      "shopName logo"
+    );
+
     if (!product) return res.status(404).json({ message: "Product not found" });
 
     res.status(200).json(product);
