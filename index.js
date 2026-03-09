@@ -22,9 +22,7 @@ app.use(cookieParser());
 // CORS
 const allowedOrigins = [
   "http://localhost:5175",
-  "https://we-deal-frontend.vercel.app",
-  "https://wedeal.netlify.app",
-  "https://wedealsindia.netlify.app",
+  "https://glittering-banoffee-98234c.netlify.app/all-products"
 ];
 
 app.use(cors({
