@@ -22,7 +22,7 @@ app.use(cookieParser());
 // CORS
 const allowedOrigins = [
   "http://localhost:5175",
-  "https://glittering-banoffee-98234c.netlify.app/all-products"
+  "https://glittering-banoffee-98234c.netlify.app"
 ];
 
 app.use(cors({
