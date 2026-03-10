@@ -137,15 +137,13 @@ const logoutSeller = (req, res) => {
 
 
 // controllers/sellerController.js
- const verifySeller = (req, res) => {
+const verifySeller = (req, res) => {
   try {
     res.json({
-      sellerId: req.seller.id,
-      role: req.seller.role,
-      message: "Verified",
+      message: "Access allowed",
     });
   } catch (error) {
-    console.error("Seller verification failed:", error);
+    console.error("Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
