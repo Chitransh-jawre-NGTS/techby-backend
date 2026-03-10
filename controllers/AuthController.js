@@ -100,23 +100,15 @@ const loginSeller = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    // ✅ Store token in cookie
-  res.cookie("sellerToken", token, {
+  
+
+   res.cookie("sellerToken", token, {
   httpOnly: true,
   secure: true,
   sameSite: "None",
+  path: "/",
   maxAge: 24 * 60 * 60 * 1000
 });
-
-    res.json({
-      message: "Login successful",
-      seller: {
-        id: seller._id,
-        name: seller.name,
-        email: seller.email,
-        shopName: seller.shopName
-      }
-    });
 
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -130,6 +122,13 @@ const loginSeller = async (req, res) => {
 const logoutSeller = (req, res) => {
   res.clearCookie("sellerToken");
 
+  res.cookie("sellerToken", token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: "None",
+  path: "/",
+  maxAge: 24 * 60 * 60 * 1000
+});
   res.json({
     message: "Seller logged out"
   });
