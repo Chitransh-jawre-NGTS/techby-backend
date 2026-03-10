@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
 const sellerAuth = (req, res, next) => {
-  const token = req.cookies?.sellerToken; // ✅ optional chaining
+  const token = req.cookies?.sellerToken || req.headers.authorization?.split(' ')[1]; // ✅ Check both cookie and header
 
   if (!token) {
     return res.status(401).json({ message: "Unauthorized" });

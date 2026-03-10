@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const cookieParser = require("cookie-parser");
 
-const { registerSeller, loginSeller, logoutSeller,getSellerProfile, } = require("../controllers/AuthController");
+const { registerSeller, loginSeller, logoutSeller,getSellerProfile,verifySeller } = require("../controllers/AuthController");
 const sellerAuth = require("../middleware/AuthMiddleware");
 // Register seller
 router.post("/register", registerSeller);
@@ -16,7 +16,8 @@ router.post("/sellers/logout", logoutSeller);
 router.get("/sellers/profile", sellerAuth , getSellerProfile);
 
 // Verify seller token (used for protected routes)
-
+// Verify Seller
+router.get("/sellers/verify", sellerAuth, verifySeller);
 
 
 module.exports = router;
