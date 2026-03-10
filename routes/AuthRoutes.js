@@ -17,7 +17,7 @@ router.get("/sellers/profile", sellerAuth , getSellerProfile);
 
 // Verify seller token (used for protected routes)
 // Verify Seller
-router.get("/sellers/verify", sellerAuth, verifySeller);
+router.get("/sellers/verify", verifySeller);
 
 
 module.exports = router;
