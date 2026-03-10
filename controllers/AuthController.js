@@ -78,21 +78,62 @@ const registerSeller = async (req, res) => {
 
 // ---------------- SELLER LOGIN ----------------
 
+// const loginSeller = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     const seller = await Seller.findOne({ email });
+
+//     if (!seller) {
+//       return res.status(400).json({ message: "Invalid credentials" });
+//     }
+
+//     const isMatch = await bcrypt.compare(password, seller.password);
+
+//     if (!isMatch) {
+//       return res.status(400).json({ message: "Invalid credentials" });
+//     }
+
+//     const token = jwt.sign(
+//       { id: seller._id, role: "seller" },
+//       JWT_SECRET,
+//       { expiresIn: "1d" }
+//     );
+
+//     // ✅ Store token in cookie
+//     res.cookie("sellerToken", token, {
+//       httpOnly: true,
+//       secure: false, // true in production
+//       sameSite: "lax",
+//       maxAge: 24 * 60 * 60 * 1000
+//     });
+
+//     res.json({
+//       message: "Login successful",
+//       seller: {
+//         id: seller._id,
+//         name: seller.name,
+//         email: seller.email,
+//         shopName: seller.shopName
+//       }
+//     });
+
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+// controllers/sellerController.js
+
 const loginSeller = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const seller = await Seller.findOne({ email });
 
-    if (!seller) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!seller) return res.status(400).json({ message: "Invalid credentials" });
 
     const isMatch = await bcrypt.compare(password, seller.password);
-
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = jwt.sign(
       { id: seller._id, role: "seller" },
@@ -100,21 +141,20 @@ const loginSeller = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-  
-
-   res.cookie("sellerToken", token, {
-  httpOnly: true,
-  secure: true,
-  sameSite: "None",
-  path: "/",
-  maxAge: 24 * 60 * 60 * 1000
-});
-
+    res.json({
+      message: "Login successful",
+      token,  // <-- send token in response instead of cookie
+      seller: {
+        id: seller._id,
+        name: seller.name,
+        email: seller.email,
+        shopName: seller.shopName
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 
 // ---------------- SELLER LOGOUT ----------------
@@ -122,13 +162,6 @@ const loginSeller = async (req, res) => {
 const logoutSeller = (req, res) => {
   res.clearCookie("sellerToken");
 
-  res.cookie("sellerToken", token, {
-  httpOnly: true,
-  secure: true,
-  sameSite: "None",
-  path: "/",
-  maxAge: 24 * 60 * 60 * 1000
-});
   res.json({
     message: "Seller logged out"
   });
