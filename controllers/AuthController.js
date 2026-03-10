@@ -101,12 +101,12 @@ const loginSeller = async (req, res) => {
     );
 
     // ✅ Store token in cookie
-    res.cookie("sellerToken", token, {
-      httpOnly: true,
-      secure: true, // true in production
-      sameSite: "none",
-      maxAge: 24 * 60 * 60 * 1000
-    });
+  res.cookie("sellerToken", token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: "None",
+  maxAge: 24 * 60 * 60 * 1000
+});
 
     res.json({
       message: "Login successful",
