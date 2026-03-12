@@ -2,6 +2,8 @@ const User = require('../models/User');
 const Seller = require('../models/seller');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const cloudinary = require("../config/cloudinary");
+const streamifier = require("streamifier");
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 
@@ -28,51 +30,51 @@ const getSellerProfile = async (req, res) => {
   }
 };
 
-const registerSeller = async (req, res) => {
-  try {
-    const { name, email, password, shopName, phone } = req.body;
+// const registerSeller = async (req, res) => {
+//   try {
+//     const { name, email, password, shopName, phone } = req.body;
 
-    // Check if seller already exists
-    const existingSeller = await Seller.findOne({ email });
-    if (existingSeller) {
-      return res.status(400).json({ message: "Seller already exists" });
-    }
+//     // Check if seller already exists
+//     const existingSeller = await Seller.findOne({ email });
+//     if (existingSeller) {
+//       return res.status(400).json({ message: "Seller already exists" });
+//     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+//     // Hash password
+//     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Handle logo upload if provided
-    let logoUrl = "";
-    if (req.file) { // assuming single file upload named 'file' in form-data
-      const result = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "seller-logos" },
-          (error, result) => (error ? reject(error) : resolve(result.secure_url))
-        );
-        streamifier.createReadStream(req.file.buffer).pipe(stream);
-      });
-      logoUrl = result;
-    }
+//     // Handle logo upload if provided
+//     let logoUrl = "";
+//     if (req.file) { // assuming single file upload named 'file' in form-data
+//       const result = await new Promise((resolve, reject) => {
+//         const stream = cloudinary.uploader.upload_stream(
+//           { folder: "seller-logos" },
+//           (error, result) => (error ? reject(error) : resolve(result.secure_url))
+//         );
+//         streamifier.createReadStream(req.file.buffer).pipe(stream);
+//       });
+//       logoUrl = result;
+//     }
 
-    // Create new seller
-    const newSeller = new Seller({
-      name,
-      email,
-      password: hashedPassword,
-      shopName,
-      phone,
-      logo: logoUrl,
-    });
+//     // Create new seller
+//     const newSeller = new Seller({
+//       name,
+//       email,
+//       password: hashedPassword,
+//       shopName,
+//       phone,
+//       logo: logoUrl,
+//     });
 
-    await newSeller.save();
+//     await newSeller.save();
 
-    res.status(201).json({ message: "Seller registered successfully", seller: newSeller });
+//     res.status(201).json({ message: "Seller registered successfully", seller: newSeller });
 
-  } catch (err) {
-    console.error("Error registering seller:", err.message);
-    res.status(500).json({ message: err.message });
-  }
-};
+//   } catch (err) {
+//     console.error("Error registering seller:", err.message);
+//     res.status(500).json({ message: err.message });
+//   }
+// };
 
 
 
@@ -125,6 +127,92 @@ const registerSeller = async (req, res) => {
 
 // controllers/sellerController.js
 
+
+
+
+
+
+const registerSeller = async (req, res) => {
+  try {
+
+    const { name, email, password, shopName, phone } = req.body;
+
+    if (!name || !email || !password || !shopName) {
+      return res.status(400).json({
+        message: "Required fields missing"
+      });
+    }
+
+    // Check if seller already exists
+    const existingSeller = await Seller.findOne({ email });
+
+    if (existingSeller) {
+      return res.status(400).json({
+        message: "Seller already exists"
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    let logoUrl = "";
+
+    // Upload logo if exists
+    if (req.file) {
+
+      const logoUpload = await new Promise((resolve, reject) => {
+
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "seller-logos" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+          }
+        );
+
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+
+      });
+
+      logoUrl = logoUpload;
+    }
+
+    const newSeller = new Seller({
+      name,
+      email,
+      password: hashedPassword,
+      shopName,
+      phone,
+      logo: logoUrl,
+    });
+
+    await newSeller.save();
+
+    // Remove password before sending response
+    const sellerResponse = {
+      _id: newSeller._id,
+      name: newSeller.name,
+      email: newSeller.email,
+      shopName: newSeller.shopName,
+      phone: newSeller.phone,
+      logo: newSeller.logo,
+    };
+
+    res.status(201).json({
+      message: "Seller registered successfully",
+      seller: sellerResponse
+    });
+
+  } catch (error) {
+
+    console.error("Seller Registration Error:", error);
+
+    res.status(500).json({
+      message: "Server Error"
+    });
+
+  }
+};
 const loginSeller = async (req, res) => {
   try {
     const { email, password } = req.body;

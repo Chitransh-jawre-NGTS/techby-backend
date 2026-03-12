@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const cookieParser = require("cookie-parser");
+const upload = require("../middleware/upload");
 
 const { registerSeller, loginSeller, logoutSeller,getSellerProfile,verifySeller } = require("../controllers/AuthController");
 const sellerAuth = require("../middleware/AuthMiddleware");
 // Register seller
-router.post("/register", registerSeller);
+router.post("/register", upload.single("logo"), registerSeller);
 
 // Login seller (store JWT in httpOnly cookie)
 router.post("/sellers/login", loginSeller);
