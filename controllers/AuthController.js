@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Seller = require('../models/seller');
+const Admin = require("../models/Admin");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cloudinary = require("../config/cloudinary");
@@ -8,7 +9,36 @@ const streamifier = require("streamifier");
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 
 
-// ---------------- SELLER REGISTER ----------------
+const loginAdmin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Compare with env credentials
+    if (
+      email !== process.env.ADMIN_EMAIL ||
+      password !== process.env.ADMIN_PASSWORD
+    ) {
+      return res.status(400).json({ message: "Invalid admin credentials" });
+    }
+
+    const token = jwt.sign(
+      { role: "admin" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Admin login successful",
+      token,
+      admin: {
+        email: process.env.ADMIN_EMAIL
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // ---------------- GET SELLER PROFILE ----------------
 
@@ -29,6 +59,220 @@ const getSellerProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+
+
+
+
+const registerSeller = async (req, res) => {
+  try {
+
+    const { name, email, password, shopName, phone, location } = req.body;
+
+    if (!name || !email || !password || !shopName || !location) {
+  return res.status(400).json({ message: "Required fields missing" });
+}
+
+    // Check if seller already exists
+    const existingSeller = await Seller.findOne({ email });
+
+    if (existingSeller) {
+      return res.status(400).json({
+        message: "Seller already exists"
+      });
+    }
+    // Validate location
+if (!["Indore", "Seoni", "Chhindwara"].includes(location)) {
+  return res.status(400).json({ message: "Invalid location" });
+}
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    let logoUrl = "";
+
+    // Upload logo if exists
+    if (req.file) {
+
+      const logoUpload = await new Promise((resolve, reject) => {
+
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "seller-logos" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+          }
+        );
+
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+
+      });
+
+      logoUrl = logoUpload;
+    }
+
+    const newSeller = new Seller({
+      name,
+      email,
+      password: hashedPassword,
+      shopName,
+      phone,
+      logo: logoUrl,
+      location,
+    });
+
+    await newSeller.save();
+
+    // Remove password before sending response
+    const sellerResponse = {
+      _id: newSeller._id,
+      name: newSeller.name,
+      email: newSeller.email,
+      shopName: newSeller.shopName,
+      phone: newSeller.phone,
+      logo: newSeller.logo,
+      location: newSeller.location, 
+    };
+
+    res.status(201).json({
+      message: "Seller registered successfully",
+      seller: sellerResponse
+    });
+
+  } catch (error) {
+
+    console.error("Seller Registration Error:", error);
+
+    res.status(500).json({
+      message: "Server Error"
+    });
+
+  }
+};
+const loginSeller = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const seller = await Seller.findOne({ email });
+
+    if (!seller) return res.status(400).json({ message: "Invalid credentials" });
+
+    const isMatch = await bcrypt.compare(password, seller.password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+
+    const token = jwt.sign(
+      { id: seller._id, role: "seller" },
+      JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,  // <-- send token in response instead of cookie
+      seller: {
+        id: seller._id,
+        name: seller.name,
+        email: seller.email,
+        shopName: seller.shopName
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+// ---------------- SELLER LOGOUT ----------------
+
+const logoutSeller = (req, res) => {
+  res.clearCookie("sellerToken");
+
+  res.json({
+    message: "Seller logged out"
+  });
+};
+
+
+// controllers/sellerController.js
+ const verifySeller = (req, res) => {
+  try {
+    res.json({
+      sellerId: req.seller.id,
+      role: req.seller.role,
+      message: "Verified",
+    });
+  } catch (error) {
+    console.error("Seller verification failed:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ---------------- GET ALL SELLERS ----------------
+const getAllSellers = async (req, res) => {
+  try {
+    // Only admin can fetch all sellers
+    if (req.seller.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden: Admins only" });
+    }
+
+    const sellers = await Seller.find().select("-password"); // exclude passwords
+    res.status(200).json({ sellers });
+  } catch (error) {
+    console.error("Get all sellers error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ---------------- DELETE SELLER ----------------
+const deleteSeller = async (req, res) => {
+  try {
+    // Only admin can delete a seller
+    if (req.seller.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden: Admins only" });
+    }
+
+    const seller = await Seller.findById(req.params.id);
+    if (!seller) {
+      return res.status(404).json({ message: "Seller not found" });
+    }
+
+    await seller.deleteOne();
+    res.status(200).json({ message: "Seller deleted successfully" });
+  } catch (error) {
+    console.error("Delete seller error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = {
+  registerSeller,
+  loginSeller,
+  logoutSeller,
+  getSellerProfile,
+  verifySeller,
+  loginAdmin,
+  getAllSellers,
+  deleteSeller
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // const registerSeller = async (req, res) => {
 //   try {
@@ -126,177 +370,6 @@ const getSellerProfile = async (req, res) => {
 // };
 
 // controllers/sellerController.js
-
-
-
-
-
-
-const registerSeller = async (req, res) => {
-  try {
-
-    const { name, email, password, shopName, phone } = req.body;
-
-    if (!name || !email || !password || !shopName) {
-      return res.status(400).json({
-        message: "Required fields missing"
-      });
-    }
-
-    // Check if seller already exists
-    const existingSeller = await Seller.findOne({ email });
-
-    if (existingSeller) {
-      return res.status(400).json({
-        message: "Seller already exists"
-      });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    let logoUrl = "";
-
-    // Upload logo if exists
-    if (req.file) {
-
-      const logoUpload = await new Promise((resolve, reject) => {
-
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "seller-logos" },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result.secure_url);
-          }
-        );
-
-        streamifier.createReadStream(req.file.buffer).pipe(stream);
-
-      });
-
-      logoUrl = logoUpload;
-    }
-
-    const newSeller = new Seller({
-      name,
-      email,
-      password: hashedPassword,
-      shopName,
-      phone,
-      logo: logoUrl,
-    });
-
-    await newSeller.save();
-
-    // Remove password before sending response
-    const sellerResponse = {
-      _id: newSeller._id,
-      name: newSeller.name,
-      email: newSeller.email,
-      shopName: newSeller.shopName,
-      phone: newSeller.phone,
-      logo: newSeller.logo,
-    };
-
-    res.status(201).json({
-      message: "Seller registered successfully",
-      seller: sellerResponse
-    });
-
-  } catch (error) {
-
-    console.error("Seller Registration Error:", error);
-
-    res.status(500).json({
-      message: "Server Error"
-    });
-
-  }
-};
-const loginSeller = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const seller = await Seller.findOne({ email });
-
-    if (!seller) return res.status(400).json({ message: "Invalid credentials" });
-
-    const isMatch = await bcrypt.compare(password, seller.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
-
-    const token = jwt.sign(
-      { id: seller._id, role: "seller" },
-      JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    res.json({
-      message: "Login successful",
-      token,  // <-- send token in response instead of cookie
-      seller: {
-        id: seller._id,
-        name: seller.name,
-        email: seller.email,
-        shopName: seller.shopName
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-
-// ---------------- SELLER LOGOUT ----------------
-
-const logoutSeller = (req, res) => {
-  res.clearCookie("sellerToken");
-
-  res.json({
-    message: "Seller logged out"
-  });
-};
-
-
-// controllers/sellerController.js
- const verifySeller = (req, res) => {
-  try {
-    res.json({
-      sellerId: req.seller.id,
-      role: req.seller.role,
-      message: "Verified",
-    });
-  } catch (error) {
-    console.error("Seller verification failed:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-
-module.exports = {
-  registerSeller,
-  loginSeller,
-  logoutSeller,
-  getSellerProfile,
-  verifySeller
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

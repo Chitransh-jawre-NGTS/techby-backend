@@ -1,190 +1,3 @@
-// const Product = require('../models/Product');
-// const cloudinary = require('../config/cloudinary');
-// const streamifier = require('streamifier');
-
-
-// // Get all products
-// const getAllProducts = async (req, res) => {
-//   try {
-//     const products = await Product.find();
-//     res.status(200).json(products);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-
-// // Get product by ID
-// const getProductById = async (req, res) => {
-//   try {
-//     const product = await Product.findById(req.params.id);
-
-//     if (!product) {
-//       return res.status(404).json({ message: "Product not found" });
-//     }
-
-//     res.status(200).json(product);
-
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-
-// // Create product
-// const createProduct = async (req, res) => {
-//   try {
-
-//     const { name, desc, price, sellerId } = req.body;
-
-//     let imageUrl = "";
-
-//     if (req.file) {
-
-//       const uploadStream = () => {
-//         return new Promise((resolve, reject) => {
-
-//           const stream = cloudinary.uploader.upload_stream(
-//             { folder: "products" },
-//             (error, result) => {
-//               if (error) reject(error);
-//               else resolve(result);
-//             }
-//           );
-
-//           streamifier.createReadStream(req.file.buffer).pipe(stream);
-
-//         });
-//       };
-
-//       const result = await uploadStream();
-//       imageUrl = result.secure_url;
-
-//     }
-
-//     const newProduct = new Product({
-//       name,
-//       desc,
-//       price,
-//       sellerId,
-//       imageUrl
-//     });
-
-//     await newProduct.save();
-
-//     res.status(201).json(newProduct);
-
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-
-// // Update product
-// const updateProduct = async (req, res) => {
-//   try {
-
-//     const { name, desc, price } = req.body;
-
-//     const updatedProduct = await Product.findByIdAndUpdate(
-//       req.params.id,
-//       { name, desc, price },
-//       { new: true }
-//     );
-
-//     if (!updatedProduct) {
-//       return res.status(404).json({ message: "Product not found" });
-//     }
-
-//     res.status(200).json(updatedProduct);
-
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-
-// // Delete product
-// const deleteProduct = async (req, res) => {
-//   try {
-
-//     const deletedProduct = await Product.findByIdAndDelete(req.params.id);
-
-//     if (!deletedProduct) {
-//       return res.status(404).json({ message: "Product not found" });
-//     }
-
-//     res.status(200).json({ message: "Product deleted successfully" });
-
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-
-// module.exports = {
-//   getAllProducts,
-//   getProductById,
-//   createProduct,
-//   updateProduct,
-//   deleteProduct
-// };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ---------------- GET ALL PRODUCTS ----------------
-// const getAllProducts = async (req, res) => {
-//   try {
-//     const products = await Product.find();
-//     res.status(200).json(products);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const Product = require("../models/Product");
 const cloudinary = require("../config/cloudinary");
 const streamifier = require("streamifier");
@@ -194,10 +7,9 @@ const streamifier = require("streamifier");
 // ---------------- GET PRODUCT BY ID WITH SELLER DETAILS ----------------
 const getProductById = async (req, res) => {
   try {
-    // Populate seller info (shopName, logo)
     const product = await Product.findById(req.params.id).populate(
       "sellerId",
-      "shopName logo"
+      "shopName ",
     );
 
     if (!product) return res.status(404).json({ message: "Product not found" });
@@ -239,12 +51,78 @@ const getSellerProducts = async (req, res) => {
   }
 };
 // ---------------- CREATE PRODUCT ----------------
+// const createProduct = async (req, res) => {
+//   try {
+//     const { name, desc, category, totalPrice, discountPrice, featured, deliveryAvailable, ...rest } = req.body;
+
+//     if (!req.seller || !req.seller.id) {
+//       return res.status(401).json({ message: "Unauthorized" });
+//     }
+
+//     // Handle multiple images
+//     let imageUrls = [];
+//     if (req.files && req.files.length > 0) {
+//       const uploadPromises = req.files.map(file => {
+//         return new Promise((resolve, reject) => {
+//           const stream = cloudinary.uploader.upload_stream(
+//             { folder: "products" },
+//             (error, result) => (error ? reject(error) : resolve(result.secure_url))
+//           );
+//           streamifier.createReadStream(file.buffer).pipe(stream);
+//         });
+//       });
+//       imageUrls = await Promise.all(uploadPromises);
+//     }
+
+//     // Collect all dynamic fields into attributes
+//     const attributes = { ...rest };
+
+//     const newProduct = new Product({
+//       name,
+//       desc,
+//       category,
+//       totalPrice,
+//       discountPrice,
+//       featured: featured || false,
+//       deliveryAvailable: deliveryAvailable || false,
+//       sellerId: req.seller.id,
+//       imageUrls,
+//       attributes,
+//     });
+
+//     await newProduct.save();
+//     res.status(201).json(newProduct);
+
+//   } catch (err) {
+//     console.error("Error creating product:", err.message);
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
 const createProduct = async (req, res) => {
   try {
     const { name, desc, category, totalPrice, discountPrice, featured, deliveryAvailable, ...rest } = req.body;
 
     if (!req.seller || !req.seller.id) {
       return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const sellerId = req.seller.id;
+
+    // ✅ Check how many products the seller uploaded today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const todayCount = await Product.countDocuments({
+      sellerId,
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    if (todayCount >= 5) {
+      return res.status(403).json({ message: "You can only upload 5 products per day. Try again tomorrow." });
     }
 
     // Handle multiple images
@@ -273,7 +151,7 @@ const createProduct = async (req, res) => {
       discountPrice,
       featured: featured || false,
       deliveryAvailable: deliveryAvailable || false,
-      sellerId: req.seller.id,
+      sellerId,
       imageUrls,
       attributes,
     });
@@ -349,6 +227,37 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+
+module.exports = {
+  getAllProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  getSellerProducts,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ---------------- GET PRODUCTS OF LOGGED-IN SELLER ----------------
 // const getSellerProducts = async (req, res) => {
 //   try {
@@ -364,12 +273,3 @@ const deleteProduct = async (req, res) => {
 //     res.status(500).json({ message: err.message });
 //   }
 // };
-
-module.exports = {
-  getAllProducts,
-  getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  getSellerProducts,
-};
