@@ -211,39 +211,23 @@ const logoutSeller = (req, res) => {
 // ---------------- GET ALL SELLERS ----------------
 const getAllSellers = async (req, res) => {
   try {
-    // Only admin can fetch all sellers
-    if (req.seller.role !== "admin") {
-      return res.status(403).json({ message: "Forbidden: Admins only" });
-    }
-
-    const sellers = await Seller.find().select("-password"); // exclude passwords
-    res.status(200).json({ sellers });
-  } catch (error) {
-    console.error("Get all sellers error:", error);
-    res.status(500).json({ message: "Server error" });
+    const sellers = await Seller.find();
+    res.json(sellers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-// ---------------- DELETE SELLER ----------------
 const deleteSeller = async (req, res) => {
   try {
-    // Only admin can delete a seller
-    if (req.seller.role !== "admin") {
-      return res.status(403).json({ message: "Forbidden: Admins only" });
-    }
-
-    const seller = await Seller.findById(req.params.id);
-    if (!seller) {
-      return res.status(404).json({ message: "Seller not found" });
-    }
-
-    await seller.deleteOne();
-    res.status(200).json({ message: "Seller deleted successfully" });
-  } catch (error) {
-    console.error("Delete seller error:", error);
-    res.status(500).json({ message: "Server error" });
+    const { id } = req.params;
+    await Seller.findByIdAndDelete(id);
+    res.json({ message: "Seller deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
+
 
 module.exports = {
   registerSeller,

@@ -37,7 +37,9 @@ app.use(cors({
 const authRoutes = require('./routes/AuthRoutes');
 const productRoutes = require('./routes/ProductRoutes');
 const codeRoutes = require("./routes/codeRoutes");
+const paymentRoutes = require("./routes/payment");
 
+app.use("/api/payment", paymentRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use("/api/code", codeRoutes);

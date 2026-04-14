@@ -12,6 +12,9 @@
 // });
 
 // module.exports = mongoose.model("Product", productSchema);
+
+
+
 const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
@@ -30,4 +33,50 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ✅ Add this field
+productSchema.add({
+  expiresAt: {
+    type: Date,
+    required: true,
+  },
+});
 module.exports = mongoose.model("Product", productSchema);
+
+
+
+// const mongoose = require("mongoose");
+
+// const productSchema = new mongoose.Schema(
+//   {
+//     name: { type: String, required: true },
+//     desc: String,
+//     category: String,
+//     totalPrice: Number,
+//     discountPrice: Number,
+
+//     // ✅ FIX THIS (store object, not string)
+//     imageUrls: [
+//       {
+//         url: String,
+//         public_id: String,
+//       },
+//     ],
+
+//     attributes: { type: Object },
+//     featured: { type: Boolean, default: false },
+//     deliveryAvailable: { type: Boolean, default: false },
+//     sellerId: { type: mongoose.Schema.Types.ObjectId, ref: "Seller" },
+
+//     // ✅ expiry field
+//     expiresAt: {
+//       type: Date,
+//       required: true,
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+// // ✅ VERY IMPORTANT (auto delete after expiry)
+// productSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+// module.exports = mongoose.model("Product", productSchema);

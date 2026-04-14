@@ -25,27 +25,9 @@ router.get("/sellers/verify", sellerAuth, verifySeller);
 router.post("/admin/login", loginAdmin);
 
 // GET /api/admin/sellers
-router.get("/admin/sellers", adminAuth, async (req, res, next) => {
-  try {
-    if (req.seller.role !== "admin") {
-      return res.status(403).json({ message: "Forbidden: Admins only" });
-    }
-    next();
-  } catch (err) {
-    next(err);
-  }
-}, getAllSellers);
+router.get("/admin/sellers", adminAuth, getAllSellers);
 
-router.delete("/admin/sellers/:id", adminAuth, async (req, res, next) => {
-  try {
-    if (req.seller.role !== "admin") {
-      return res.status(403).json({ message: "Forbidden: Admins only" });
-    }
-    next();
-  } catch (err) {
-    next(err);
-  }
-}, deleteSeller);
+router.delete("/admin/sellers/:id", adminAuth, deleteSeller);
 
 
 module.exports = router;
