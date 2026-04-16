@@ -220,13 +220,12 @@ const streamifier = require("streamifier");
 // ---------------- GET PRODUCT BY ID ----------------
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate(
-      "sellerId",
-      "shopName"
-    );
+    const product = await Product.findById(req.params.id)
+      .populate("sellerId", "name shopName email phone logo location");
 
-    if (!product)
+    if (!product) {
       return res.status(404).json({ message: "Product not found" });
+    }
 
     res.status(200).json(product);
   } catch (err) {
@@ -424,19 +423,55 @@ const deleteProduct = async (req, res) => {
       sellerId: req.seller.id,
     });
 
-    if (!product)
-      return res.status(404).json({ message: "Not found" });
-
-    // ✅ Delete images from Cloudinary
-    for (const img of product.imageUrls) {
-      if (img.public_id) {
-        await cloudinary.uploader.destroy(img.public_id);
-      }
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
     }
 
+    // ✅ SAFETY CHECK
+    if (product.imageUrls && product.imageUrls.length > 0) {
+      const deletePromises = product.imageUrls.map((img) => {
+        if (img.public_id) {
+          return cloudinary.uploader.destroy(img.public_id);
+        }
+      });
+
+      // ✅ Delete all images in parallel
+      await Promise.all(deletePromises);
+    }
+
+    // ✅ Delete product from DB
     await product.deleteOne();
 
-    res.status(200).json({ message: "Deleted successfully" });
+    res.status(200).json({
+      message: "Product and images deleted successfully",
+    });
+  } catch (err) {
+    console.error("Delete product error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+const getSellerProductLimit = async (req, res) => {
+  try {
+    const sellerId = req.seller.id;
+
+    const limit = 10;
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const used = await Product.countDocuments({
+      sellerId,
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    res.json({
+      limit,
+      used,
+      remaining: limit - used,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -448,5 +483,6 @@ module.exports = {
   getSellerProducts,
   createProduct,
   updateProduct,
+  getSellerProductLimit,
   deleteProduct,
 };

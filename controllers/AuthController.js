@@ -5,6 +5,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cloudinary = require("../config/cloudinary");
 const streamifier = require("streamifier");
+const Product = require("../models/Product");
+const Order = require("../models/Order");
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 
@@ -221,8 +223,26 @@ const getAllSellers = async (req, res) => {
 const deleteSeller = async (req, res) => {
   try {
     const { id } = req.params;
-    await Seller.findByIdAndDelete(id);
-    res.json({ message: "Seller deleted successfully" });
+
+    // 1. Delete seller
+    const seller = await Seller.findByIdAndDelete(id);
+    if (!seller) {
+      return res.status(404).json({ message: "Seller not found" });
+    }
+
+    // 2. Delete seller products
+    await Product.deleteMany({ sellerId: id });
+
+    // 3. Delete seller orders
+    await Order.deleteMany({ sellerId: id });
+
+    // 4. (Optional) delete logo from cloudinary
+    // You need public_id for this
+
+    res.json({
+      message: "Seller and all related data deleted successfully"
+    });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

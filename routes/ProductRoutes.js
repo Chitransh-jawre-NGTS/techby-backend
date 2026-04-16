@@ -50,6 +50,7 @@ const sellerAuth = require("../middleware/AuthMiddleware");
 
 // Protected seller routes
 router.get("/seller", sellerAuth, productController.getSellerProducts);
+router.get("/limit", sellerAuth, productController.getSellerProductLimit);
 
 // Use .array("images", 4) for multiple images
 router.post("/", sellerAuth, upload.array("images", 4), productController.createProduct);
