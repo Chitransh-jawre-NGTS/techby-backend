@@ -1059,7 +1059,7 @@ const createProduct = async (req, res) => {
     const isDelivery = deliveryAvailable === true || deliveryAvailable === "true";
 
     // ================= FREE LIMIT =================
-    const FREE_LIMIT = 3;
+    const FREE_LIMIT = 20;
     const used = await getMonthlyUsage(sellerId);
 
     let isPaid = false;
@@ -1275,7 +1275,7 @@ const getSellerProductLimit = async (req, res) => {
       return res.status(404).json({ message: "Seller not found" });
     }
 
-    const FREE_LIMIT = 3;
+    const FREE_LIMIT = 20;
     const used = await getMonthlyUsage(sellerId);
 
     res.json({

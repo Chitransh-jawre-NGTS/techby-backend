@@ -2,9 +2,10 @@ const ListingPurchase = require("../models/ListingPurchase");
 const cloudinary = require("../config/cloudinary");
 const streamifier = require("streamifier");
 const Seller = require("../models/seller");
-
+const sharp = require("sharp"); // ✅ added
 // ================= CREATE PURCHASE =================
- const createPurchase = async (req, res) => {
+// ================= CREATE PURCHASE =================
+const createPurchase = async (req, res) => {
   try {
     const { normalCount, featureCount, totalAmount } = req.body;
 
@@ -12,13 +13,23 @@ const Seller = require("../models/seller");
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // ✅ Upload screenshot
     let screenshot = {};
 
+    // ================= IMAGE OPTIMIZATION =================
     if (req.file) {
+      // 🔥 compress image using sharp
+      const optimizedBuffer = await sharp(req.file.buffer)
+        .resize({ width: 1200 }) // limit size
+        .jpeg({ quality: 70 })   // compress quality
+        .toBuffer();
+
+      // ================= CLOUDINARY UPLOAD =================
       screenshot = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { folder: "payments" },
+          {
+            folder: "payments",
+            resource_type: "image",
+          },
           (error, result) => {
             if (error) return reject(error);
 
@@ -29,7 +40,7 @@ const Seller = require("../models/seller");
           }
         );
 
-        streamifier.createReadStream(req.file.buffer).pipe(stream);
+        streamifier.createReadStream(optimizedBuffer).pipe(stream);
       });
     }
 
