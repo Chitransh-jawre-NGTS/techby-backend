@@ -24,7 +24,7 @@
 // middleware/authMiddleware.js
 const jwt = require("jsonwebtoken");
 const Seller = require("../models/seller");
-const seller = require("../models/seller");
+
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 

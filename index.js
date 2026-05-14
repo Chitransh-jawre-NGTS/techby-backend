@@ -7,11 +7,13 @@ const cookieParser = require("cookie-parser");
 
 const connectDB = require("./config/db");
 
-dotenv.config();
 
 
 // ✅ Connect Database
+dotenv.config();
 connectDB();
+
+
 
 const app = express();
 app.use(express.json());
@@ -38,6 +40,7 @@ const codeRoutes = require("./routes/codeRoutes");
 const OrdersRoutes = require("./routes/orders");
 const listingRoutes = require("./routes/listingRoutes");
 const productStatsRoutes = require("./routes/productStatsRoutes"); 
+const userRoutes = require("./routes/UserRoutes");
 
 app.use("/api/product-stats", productStatsRoutes);
 
@@ -47,6 +50,7 @@ app.use("/api/order", OrdersRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use("/api/code", codeRoutes);
+app.use("/api/user", userRoutes);
 
 
 // Health check

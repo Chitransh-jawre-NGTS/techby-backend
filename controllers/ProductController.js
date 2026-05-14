@@ -1010,6 +1010,94 @@ const getAllProducts = async (req, res) => {
   }
 };
 
+
+
+// const getAllProducts = async (req, res) => {
+//   try {
+
+//     // ================= PAGINATION =================
+//     const page = parseInt(req.query.page) || 1;
+
+//     const limit = parseInt(req.query.limit) || 20;
+
+//     const skip = (page - 1) * limit;
+
+//     // ================= FILTERS =================
+//     const category = req.query.category;
+
+//     const search = req.query.search;
+
+//     let filter = {};
+
+//     // CATEGORY FILTER
+//     if (category) {
+//       filter.category = category;
+//     }
+
+//     // SEARCH FILTER
+//     if (search) {
+//       filter.name = {
+//         $regex: search,
+//         $options: "i",
+//       };
+//     }
+
+//     // ================= GET PRODUCTS =================
+//     const products = await Product.find(filter)
+
+//       // ONLY REQUIRED FIELDS
+//       .select(
+//         "name desc category totalPrice discountPrice imageUrls featured deliveryAvailable sellerId createdAt"
+//       )
+
+//       // POPULATE ONLY NEEDED DATA
+//       .populate(
+//         "sellerId",
+//         "shopName logo location"
+//       )
+
+//       // NEWEST FIRST
+//       .sort({ createdAt: -1 })
+
+//       // PAGINATION
+//       .skip(skip)
+
+//       .limit(limit)
+
+//       // PERFORMANCE BOOST
+//       .lean();
+
+//     // ================= TOTAL PRODUCTS =================
+//     const totalProducts =
+//       await Product.countDocuments(filter);
+
+//     // ================= RESPONSE =================
+//     res.status(200).json({
+//       success: true,
+
+//       currentPage: page,
+
+//       totalPages: Math.ceil(
+//         totalProducts / limit
+//       ),
+
+//       totalProducts,
+
+//       products,
+//     });
+
+//   } catch (err) {
+
+//     console.error(err);
+
+//     res.status(500).json({
+//       success: false,
+//       message: err.message,
+//     });
+
+//   }
+// };
+
 // ================= GET SELLER PRODUCTS =================
 const getSellerProducts = async (req, res) => {
   try {
@@ -1150,7 +1238,7 @@ const createProduct = async (req, res) => {
       sellerId,
       imageUrls,
       attributes: { ...rest },
-      expiresAt: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
       isPaid,
     });
 
