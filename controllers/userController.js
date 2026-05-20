@@ -248,7 +248,6 @@ exports.signup = async (req, res) => {
   }
 };
 
-// ================= LOGIN =================
 exports.login = async (req, res) => {
   try {
     const { firebaseToken } = req.body;
@@ -266,14 +265,25 @@ exports.login = async (req, res) => {
       .verifyIdToken(firebaseToken);
 
     // FIND USER
-    const user = await User.findOne({
+    let user = await User.findOne({
       firebaseUid: decodedToken.uid,
     });
 
+    // ================= AUTO CREATE USER =================
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
+      user = await User.create({
+        firebaseUid: decodedToken.uid,
+
+        name:
+          decodedToken.name ||
+          "Google User",
+
+        email: decodedToken.email,
+
+        phone:
+          decodedToken.phone_number || "",
+
+        password: "", // no password for google login
       });
     }
 
@@ -284,7 +294,9 @@ exports.login = async (req, res) => {
         email: user.email,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      {
+        expiresIn: "7d",
+      }
     );
 
     return res.status(200).json({
@@ -295,6 +307,8 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
+    console.log(error);
+
     return res.status(500).json({
       success: false,
       message: error.message,
