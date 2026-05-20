@@ -33,7 +33,7 @@ const {
   getProducts,
   getProductById,
   deleteProduct,
-} = require("../controllers/productController");
+} = require("../controllers/ProductController");
 
 const auth = require("../middleware/userMiddleware");
 const upload = require("../middleware/upload");
