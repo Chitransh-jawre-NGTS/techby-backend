@@ -1,624 +1,31 @@
-// const Product = require("../models/Product");
-// const cloudinary = require("../config/cloudinary");
-// const streamifier = require("streamifier");
-
-
-
-// // ---------------- GET PRODUCT BY ID WITH SELLER DETAILS ----------------
-// const getProductById = async (req, res) => {
-//   try {
-//     const product = await Product.findById(req.params.id).populate(
-//       "sellerId",
-//       "shopName ",
-//     );
-
-//     if (!product) return res.status(404).json({ message: "Product not found" });
-
-//     res.status(200).json(product);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-
-// // ---------------- GET ALL PRODUCTS WITH SELLER DETAILS ----------------
-// const getAllProducts = async (req, res) => {
-//   try {
-//     // Populate seller info (shopName, logo)
-//     const products = await Product.find().populate("sellerId", "shopName logo");
-//     res.status(200).json(products);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-// // ---------------- GET PRODUCTS OF LOGGED-IN SELLER WITH DETAILS ----------------
-// const getSellerProducts = async (req, res) => {
-//   try {
-//     if (!req.seller || !req.seller.id) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-
-//     const products = await Product.find({ sellerId: req.seller.id }).populate(
-//       "sellerId",
-//       "shopName logo"
-//     );
-//     res.status(200).json(products);
-
-//   } catch (err) {
-//     console.error("Error fetching seller products:", err.message);
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-
-// const createProduct = async (req, res) => {
-//   try {
-//     const { name, desc, category, totalPrice, discountPrice, featured, deliveryAvailable, ...rest } = req.body;
-
-//     if (!req.seller || !req.seller.id) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-
-//     const sellerId = req.seller.id;
-
-//     // ✅ Check how many products the seller uploaded today
-//     const startOfDay = new Date();
-//     startOfDay.setHours(0, 0, 0, 0);
-
-//     const endOfDay = new Date();
-//     endOfDay.setHours(23, 59, 59, 999);
-
-//     const todayCount = await Product.countDocuments({
-//       sellerId,
-//       createdAt: { $gte: startOfDay, $lte: endOfDay },
-//     });
-
-//     if (todayCount >= 5) {
-//       return res.status(403).json({ message: "You can only upload 5 products per day. Try again tomorrow." });
-//     }
-
-//     // Handle multiple images
-//     let imageUrls = [];
-//     if (req.files && req.files.length > 0) {
-//       const uploadPromises = req.files.map(file => {
-//         return new Promise((resolve, reject) => {
-//           const stream = cloudinary.uploader.upload_stream(
-//             { folder: "products" },
-//             (error, result) => (error ? reject(error) : resolve(result.secure_url))
-//           );
-//           streamifier.createReadStream(file.buffer).pipe(stream);
-//         });
-//       });
-//       imageUrls = await Promise.all(uploadPromises);
-//     }
-
-//     // Collect all dynamic fields into attributes
-//     const attributes = { ...rest };
-
-//     const newProduct = new Product({
-//       name,
-//       desc,
-//       category,
-//       totalPrice,
-//       discountPrice,
-//       featured: featured || false,
-//       deliveryAvailable: deliveryAvailable || false,
-//       sellerId,
-//       imageUrls,
-//       attributes,
-//     });
-
-//     await newProduct.save();
-//     res.status(201).json(newProduct);
-
-//   } catch (err) {
-//     console.error("Error creating product:", err.message);
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-// // ---------------- UPDATE PRODUCT ----------------
-// const updateProduct = async (req, res) => {
-//   try {
-//     const { name, desc, category, totalPrice, discountPrice, featured, deliveryAvailable, ...rest } = req.body;
-
-//     const updateData = {
-//       name,
-//       desc,
-//       category,
-//       totalPrice,
-//       discountPrice,
-//       featured,
-//       deliveryAvailable,
-//       attributes: { ...rest },
-//     };
-
-//     // Handle multiple new images
-//     if (req.files && req.files.length > 0) {
-//       const uploadPromises = req.files.map(file => {
-//         return new Promise((resolve, reject) => {
-//           const stream = cloudinary.uploader.upload_stream(
-//             { folder: "products" },
-//             (error, result) => (error ? reject(error) : resolve(result.secure_url))
-//           );
-//           streamifier.createReadStream(file.buffer).pipe(stream);
-//         });
-//       });
-
-//       updateData.imageUrls = await Promise.all(uploadPromises);
-//     }
-
-//     const product = await Product.findOneAndUpdate(
-//       { _id: req.params.id, sellerId: req.seller.id },
-//       updateData,
-//       { new: true }
-//     );
-
-//     if (!product)
-//       return res.status(404).json({ message: "Product not found or unauthorized" });
-
-//     res.status(200).json(product);
-
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-// // ---------------- DELETE PRODUCT ----------------
-// const deleteProduct = async (req, res) => {
-//   try {
-//     const product = await Product.findOne({ _id: req.params.id, sellerId: req.seller.id });
-//     if (!product)
-//       return res.status(404).json({ message: "Product not found or unauthorized" });
-
-//     await product.deleteOne();
-//     res.status(200).json({ message: "Product deleted successfully" });
-
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-
-// module.exports = {
-//   getAllProducts,
-//   getProductById,
-//   createProduct,
-//   updateProduct,
-//   deleteProduct,
-//   getSellerProducts,
-// };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// const sharp = require("sharp");
-// const Product = require("../models/Product");
-// const cloudinary = require("../config/cloudinary");
-// const streamifier = require("streamifier");
-
-// // ---------------- GET PRODUCT BY ID ----------------
-// const getProductById = async (req, res) => {
-//   try {
-//     const product = await Product.findById(req.params.id)
-//       .populate("sellerId", "name shopName email phone logo location");
-
-//     if (!product) {
-//       return res.status(404).json({ message: "Product not found" });
-//     }
-
-//     res.status(200).json(product);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-// // ---------------- GET ALL PRODUCTS ----------------
-// const getAllProducts = async (req, res) => {
-//   try {
-//    const products = await Product.find().populate("sellerId");
-//     res.status(200).json(products);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-// // ---------------- GET SELLER PRODUCTS ----------------
-// const getSellerProducts = async (req, res) => {
-//   try {
-//     if (!req.seller || !req.seller.id) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-
-//     const products = await Product.find({
-//       sellerId: req.seller.id,
-//     }).populate("sellerId", "shopName logo");
-
-//     res.status(200).json(products);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-// // ---------------- CREATE PRODUCT ----------------
-// // const createProduct = async (req, res) => {
-// //   try {
-// //     const {
-// //       name,
-// //       desc,
-// //       category,
-// //       totalPrice,
-// //       discountPrice,
-// //       featured,
-// //       deliveryAvailable,
-// //       ...rest
-// //     } = req.body;
-
-// //     if (!req.seller || !req.seller.id) {
-// //       return res.status(401).json({ message: "Unauthorized" });
-// //     }
-
-// //     const sellerId = req.seller.id;
-
-// //     // ✅ Expiry (45 days)
-// //     const expiresAt = new Date();
-// //     expiresAt.setDate(expiresAt.getDate() + 45);
-
-// //     // ✅ Daily upload limit
-// //     const startOfDay = new Date();
-// //     startOfDay.setHours(0, 0, 0, 0);
-
-// //     const endOfDay = new Date();
-// //     endOfDay.setHours(23, 59, 59, 999);
-
-// //     const todayCount = await Product.countDocuments({
-// //       sellerId,
-// //       createdAt: { $gte: startOfDay, $lte: endOfDay },
-// //     });
-
-// //     if (todayCount >= 10) {
-// //       return res.status(403).json({
-// //         message: "You can only upload 10 products per day.",
-// //       });
-// //     }
-
-// //     // ✅ Upload images
-// //     let imageUrls = [];
-
-// //     if (req.files && req.files.length > 0) {
-// //       const uploadPromises = req.files.map((file) => {
-// //         return new Promise((resolve, reject) => {
-// //           const stream = cloudinary.uploader.upload_stream(
-// //             { folder: "products" },
-// //             (error, result) => {
-// //               if (error) return reject(error);
-
-// //               resolve({
-// //                 url: result.secure_url,
-// //                 public_id: result.public_id,
-// //               });
-// //             }
-// //           );
-
-// //           streamifier.createReadStream(file.buffer).pipe(stream);
-// //         });
-// //       });
-
-// //       imageUrls = await Promise.all(uploadPromises);
-// //     }
-
-// //     const attributes = { ...rest };
-
-// //     const newProduct = new Product({
-// //       name,
-// //       desc,
-// //       category,
-// //       totalPrice,
-// //       discountPrice,
-// //       featured: featured || false,
-// //       deliveryAvailable: deliveryAvailable || false,
-// //       sellerId,
-// //       imageUrls,
-// //       attributes,
-// //       expiresAt,
-// //     });
-
-// //     await newProduct.save();
-
-// //     res.status(201).json(newProduct);
-// //   } catch (err) {
-// //     console.error("Create product error:", err);
-// //     res.status(500).json({ message: err.message });
-// //   }
-// // };
-
-
-// const createProduct = async (req, res) => {
-//   try {
-//     const {
-//       name,
-//       desc,
-//       category,
-//       totalPrice,
-//       discountPrice,
-//       featured,
-//       deliveryAvailable,
-//       ...rest
-//     } = req.body;
-
-//     // ================= AUTH CHECK =================
-//     if (!req.seller || !req.seller.id) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-
-//     const sellerId = req.seller.id;
-
-//     // ================= MONTHLY LIMIT (20 PRODUCTS) =================
-//     const startOfMonth = new Date();
-//     startOfMonth.setDate(1);
-//     startOfMonth.setHours(0, 0, 0, 0);
-
-//     const endOfMonth = new Date();
-//     endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-//     endOfMonth.setDate(0);
-//     endOfMonth.setHours(23, 59, 59, 999);
-
-//     const monthlyCount = await Product.countDocuments({
-//       sellerId,
-//       createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-//     });
-
-//     if (monthlyCount >= 20) {
-//       return res.status(403).json({
-//         message: "You can only upload 20 products per month.",
-//       });
-//     }
-
-//     // ================= EXPIRY (45 DAYS) =================
-//     const expiresAt = new Date();
-//     expiresAt.setDate(expiresAt.getDate() + 45);
-
-//     // ================= IMAGE UPLOAD =================
-//     let imageUrls = [];
-
-//     if (req.files && req.files.length > 0) {
-//       const uploadPromises = req.files.map(async (file) => {
-//         try {
-//           const compressedBuffer = await sharp(file.buffer)
-//             .resize({
-//               width: 1400,
-//               withoutEnlargement: true,
-//             })
-//             .jpeg({
-//               quality: 92,
-//               mozjpeg: true,
-//             })
-//             .toBuffer();
-
-//           return new Promise((resolve, reject) => {
-//             const stream = cloudinary.uploader.upload_stream(
-//               { folder: "products" },
-//               (error, result) => {
-//                 if (error) return reject(error);
-
-//                 resolve({
-//                   url: result.secure_url,
-//                   public_id: result.public_id,
-//                 });
-//               }
-//             );
-
-//             streamifier.createReadStream(compressedBuffer).pipe(stream);
-//           });
-//         } catch (err) {
-//           console.error("Image processing error:", err);
-//           throw err;
-//         }
-//       });
-
-//       imageUrls = await Promise.all(uploadPromises);
-//     }
-
-//     // ================= ATTRIBUTES =================
-//     const attributes = { ...rest };
-
-//     // ================= SAVE PRODUCT =================
-//     const newProduct = new Product({
-//       name,
-//       desc,
-//       category,
-//       totalPrice,
-//       discountPrice,
-//       featured: featured || false,
-//       deliveryAvailable: deliveryAvailable || false,
-//       sellerId,
-//       imageUrls,
-//       attributes,
-//       expiresAt,
-//     });
-
-//     await newProduct.save();
-
-//     return res.status(201).json(newProduct);
-//   } catch (err) {
-//     console.error("Create product error:", err);
-//     return res.status(500).json({ message: err.message });
-//   }
-// };
-
-// module.exports = { createProduct };
-// // ---------------- UPDATE PRODUCT ----------------
-// const updateProduct = async (req, res) => {
-//   try {
-//     const {
-//       name,
-//       desc,
-//       category,
-//       totalPrice,
-//       discountPrice,
-//       featured,
-//       deliveryAvailable,
-//       ...rest
-//     } = req.body;
-
-//     let updateData = {
-//       name,
-//       desc,
-//       category,
-//       totalPrice,
-//       discountPrice,
-//       featured,
-//       deliveryAvailable,
-//       attributes: { ...rest },
-//     };
-
-//     // ✅ Upload new images (optional)
-//     if (req.files && req.files.length > 0) {
-//       const uploadPromises = req.files.map((file) => {
-//         return new Promise((resolve, reject) => {
-//           const stream = cloudinary.uploader.upload_stream(
-//             { folder: "products" },
-//             (error, result) => {
-//               if (error) return reject(error);
-
-//               resolve({
-//                 url: result.secure_url,
-//                 public_id: result.public_id,
-//               });
-//             }
-//           );
-
-//           streamifier.createReadStream(file.buffer).pipe(stream);
-//         });
-//       });
-
-//       updateData.imageUrls = await Promise.all(uploadPromises);
-//     }
-
-//     const product = await Product.findOneAndUpdate(
-//       { _id: req.params.id, sellerId: req.seller.id },
-//       updateData,
-//       { new: true }
-//     );
-
-//     if (!product)
-//       return res.status(404).json({ message: "Not found or unauthorized" });
-
-//     res.status(200).json(product);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-// // ---------------- DELETE PRODUCT ----------------
-// const deleteProduct = async (req, res) => {
-//   try {
-//     const product = await Product.findOne({
-//       _id: req.params.id,
-//       sellerId: req.seller.id,
-//     });
-
-//     if (!product) {
-//       return res.status(404).json({ message: "Product not found" });
-//     }
-
-//     // ✅ SAFETY CHECK
-//     if (product.imageUrls && product.imageUrls.length > 0) {
-//       const deletePromises = product.imageUrls.map((img) => {
-//         if (img.public_id) {
-//           return cloudinary.uploader.destroy(img.public_id);
-//         }
-//       });
-
-//       // ✅ Delete all images in parallel
-//       await Promise.all(deletePromises);
-//     }
-
-//     // ✅ Delete product from DB
-//     await product.deleteOne();
-
-//     res.status(200).json({
-//       message: "Product and images deleted successfully",
-//     });
-//   } catch (err) {
-//     console.error("Delete product error:", err);
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-// const getSellerProductLimit = async (req, res) => {
-//   try {
-//     const sellerId = req.seller.id;
-
-//     // ================= MONTHLY LIMIT =================
-//     const limit = 20;
-
-//     const startOfMonth = new Date();
-//     startOfMonth.setDate(1);
-//     startOfMonth.setHours(0, 0, 0, 0);
-
-//     const endOfMonth = new Date();
-//     endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-//     endOfMonth.setDate(0);
-//     endOfMonth.setHours(23, 59, 59, 999);
-
-//     const used = await Product.countDocuments({
-//       sellerId,
-//       createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-//     });
-
-//     res.json({
-//       limit,
-//       used,
-//       remaining: Math.max(limit - used, 0),
-//     });
-
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-// module.exports = {
-//   getAllProducts,
-//   getProductById,
-//   getSellerProducts,
-//   createProduct,
-//   updateProduct,
-//   getSellerProductLimit,
-//   deleteProduct,
-// };
-
-
-
-
-
-
-
-
 // const sharp = require("sharp");
 // const Product = require("../models/Product");
 // const Seller = require("../models/seller");
 // const cloudinary = require("../config/cloudinary");
 // const streamifier = require("streamifier");
+
+// // ================= COMMON UTIL =================
+// const getMonthlyRange = () => {
+//   const startOfMonth = new Date();
+//   startOfMonth.setDate(1);
+//   startOfMonth.setHours(0, 0, 0, 0);
+
+//   const endOfMonth = new Date();
+//   endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+//   endOfMonth.setDate(0);
+//   endOfMonth.setHours(23, 59, 59, 999);
+
+//   return { startOfMonth, endOfMonth };
+// };
+
+// const getMonthlyUsage = async (sellerId) => {
+//   const { startOfMonth, endOfMonth } = getMonthlyRange();
+
+//   return Product.countDocuments({
+//     sellerId,
+//     createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+//   });
+// };
 
 // // ================= GET PRODUCT BY ID =================
 // const getProductById = async (req, res) => {
@@ -646,10 +53,98 @@
 //   }
 // };
 
+
+
+// // const getAllProducts = async (req, res) => {
+// //   try {
+
+// //     // ================= PAGINATION =================
+// //     const page = parseInt(req.query.page) || 1;
+
+// //     const limit = parseInt(req.query.limit) || 20;
+
+// //     const skip = (page - 1) * limit;
+
+// //     // ================= FILTERS =================
+// //     const category = req.query.category;
+
+// //     const search = req.query.search;
+
+// //     let filter = {};
+
+// //     // CATEGORY FILTER
+// //     if (category) {
+// //       filter.category = category;
+// //     }
+
+// //     // SEARCH FILTER
+// //     if (search) {
+// //       filter.name = {
+// //         $regex: search,
+// //         $options: "i",
+// //       };
+// //     }
+
+// //     // ================= GET PRODUCTS =================
+// //     const products = await Product.find(filter)
+
+// //       // ONLY REQUIRED FIELDS
+// //       .select(
+// //         "name desc category totalPrice discountPrice imageUrls featured deliveryAvailable sellerId createdAt"
+// //       )
+
+// //       // POPULATE ONLY NEEDED DATA
+// //       .populate(
+// //         "sellerId",
+// //         "shopName logo location"
+// //       )
+
+// //       // NEWEST FIRST
+// //       .sort({ createdAt: -1 })
+
+// //       // PAGINATION
+// //       .skip(skip)
+
+// //       .limit(limit)
+
+// //       // PERFORMANCE BOOST
+// //       .lean();
+
+// //     // ================= TOTAL PRODUCTS =================
+// //     const totalProducts =
+// //       await Product.countDocuments(filter);
+
+// //     // ================= RESPONSE =================
+// //     res.status(200).json({
+// //       success: true,
+
+// //       currentPage: page,
+
+// //       totalPages: Math.ceil(
+// //         totalProducts / limit
+// //       ),
+
+// //       totalProducts,
+
+// //       products,
+// //     });
+
+// //   } catch (err) {
+
+// //     console.error(err);
+
+// //     res.status(500).json({
+// //       success: false,
+// //       message: err.message,
+// //     });
+
+// //   }
+// // };
+
 // // ================= GET SELLER PRODUCTS =================
 // const getSellerProducts = async (req, res) => {
 //   try {
-//     if (!req.seller || !req.seller.id) {
+//     if (!req.seller?.id) {
 //       return res.status(401).json({ message: "Unauthorized" });
 //     }
 
@@ -677,88 +172,88 @@
 //       ...rest
 //     } = req.body;
 
-//     // ================= AUTH CHECK =================
-//     if (!req.seller || !req.seller.id) {
+//     // ================= AUTH =================
+//     if (!req.seller?.id) {
 //       return res.status(401).json({ message: "Unauthorized" });
 //     }
 
 //     const sellerId = req.seller.id;
 
-//     // ================= CHECK SELLER =================
 //     const seller = await Seller.findById(sellerId);
 
 //     if (!seller) {
 //       return res.status(404).json({ message: "Seller not found" });
 //     }
 
-//     // ================= FREE LIMIT (FIXED) =================
-//     const FREE_LIMIT = 5; // ✅ FIXED (was 6 inconsistent)
+//     // ================= BOOLEAN FIX =================
+//     const isFeatured = featured === true || featured === "true";
+//     const isDelivery = deliveryAvailable === true || deliveryAvailable === "true";
 
-//     const startOfMonth = new Date();
-//     startOfMonth.setDate(1);
-//     startOfMonth.setHours(0, 0, 0, 0);
-
-//     const endOfMonth = new Date();
-//     endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-//     endOfMonth.setDate(0);
-//     endOfMonth.setHours(23, 59, 59, 999);
-
-//     const monthlyCount = await Product.countDocuments({
-//       sellerId,
-//       createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-//     });
+//     // ================= FREE LIMIT =================
+//     const FREE_LIMIT = 20;
+//     const used = await getMonthlyUsage(sellerId);
 
 //     let isPaid = false;
 
-//     // ================= CREDIT SYSTEM (SAFE ATOMIC UPDATE) =================
-//     if (monthlyCount >= FREE_LIMIT) {
+//     // ================= CREDIT SYSTEM (STRICT NO MIXING) =================
+//     if (used >= FREE_LIMIT) {
 
-//       const field = featured
-//         ? "listingCredits.featured"
-//         : "listingCredits.normal";
+//       // ❗ STRICT RULE:
+//       // featured → ONLY featured credits
+//       // normal → ONLY normal credits
 
-//       const updatedSeller = await Seller.findOneAndUpdate(
-//         {
-//           _id: sellerId,
-//           [field]: { $gt: 0 },
-//         },
-//         {
-//           $inc: { [field]: -1 },
-//         },
-//         { new: true }
-//       );
+//       if (isFeatured) {
+//         const updatedSeller = await Seller.findOneAndUpdate(
+//           {
+//             _id: sellerId,
+//             "listingCredits.featured": { $gt: 0 }
+//           },
+//           {
+//             $inc: { "listingCredits.featured": -1 }
+//           },
+//           { new: true }
+//         );
 
-//       // ❗ SAFE FAILURE HANDLING
-//       if (!updatedSeller) {
-//         return res.status(403).json({
-//           message: featured
-//             ? "No featured credits left. Please purchase."
-//             : "No normal listing credits left. Please purchase.",
-//         });
+//         if (!updatedSeller) {
+//           return res.status(403).json({
+//             success: false,
+//             message: "No featured credits left. Please purchase featured plan."
+//           });
+//         }
+
+//       } else {
+//         const updatedSeller = await Seller.findOneAndUpdate(
+//           {
+//             _id: sellerId,
+//             "listingCredits.normal": { $gt: 0 }
+//           },
+//           {
+//             $inc: { "listingCredits.normal": -1 }
+//           },
+//           { new: true }
+//         );
+
+//         if (!updatedSeller) {
+//           return res.status(403).json({
+//             success: false,
+//             message: "No normal credits left. Please purchase normal plan."
+//           });
+//         }
 //       }
 
 //       isPaid = true;
 //     }
 
-//     // ================= EXPIRY =================
-//     const expiresAt = new Date();
-//     expiresAt.setDate(expiresAt.getDate() + 45);
-
-//     // ================= IMAGE UPLOAD (UNCHANGED) =================
+//     // ================= IMAGE UPLOAD =================
 //     let imageUrls = [];
 
-//     if (req.files && req.files.length > 0) {
-//       const uploadPromises = req.files.map(async (file) => {
-//         const compressedBuffer = await sharp(file.buffer)
-//           .resize({ width: 1400, withoutEnlargement: true })
-//           .jpeg({ quality: 92, mozjpeg: true })
-//           .toBuffer();
-
+//     if (req.files?.length) {
+//       const uploads = req.files.map((file) => {
 //         return new Promise((resolve, reject) => {
 //           const stream = cloudinary.uploader.upload_stream(
 //             { folder: "products" },
-//             (error, result) => {
-//               if (error) return reject(error);
+//             (err, result) => {
+//               if (err) return reject(err);
 
 //               resolve({
 //                 url: result.secure_url,
@@ -767,35 +262,35 @@
 //             }
 //           );
 
-//           streamifier.createReadStream(compressedBuffer).pipe(stream);
+//           streamifier.createReadStream(file.buffer).pipe(stream);
 //         });
 //       });
 
-//       imageUrls = await Promise.all(uploadPromises);
+//       imageUrls = await Promise.all(uploads);
 //     }
 
 //     // ================= CREATE PRODUCT =================
-//     const newProduct = new Product({
+//     const product = new Product({
 //       name,
 //       desc,
 //       category,
 //       totalPrice,
 //       discountPrice,
-//       featured: featured || false,
-//       deliveryAvailable: deliveryAvailable || false,
+//       featured: isFeatured,            // FIXED
+//       deliveryAvailable: isDelivery,  // FIXED
 //       sellerId,
 //       imageUrls,
 //       attributes: { ...rest },
-//       expiresAt,
+//       expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
 //       isPaid,
 //     });
 
-//     await newProduct.save();
+//     await product.save();
 
 //     return res.status(201).json({
 //       success: true,
 //       message: "Product created successfully",
-//       product: newProduct,
+//       product,
 //     });
 
 //   } catch (err) {
@@ -805,25 +300,6 @@
 //       message: err.message,
 //     });
 //   }
-// };
-
-
-// const getMonthlyUsage = async (sellerId, ProductModel) => {
-//   const startOfMonth = new Date();
-//   startOfMonth.setDate(1);
-//   startOfMonth.setHours(0, 0, 0, 0);
-
-//   const endOfMonth = new Date();
-//   endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-//   endOfMonth.setDate(0);
-//   endOfMonth.setHours(23, 59, 59, 999);
-
-//   const used = await ProductModel.countDocuments({
-//     sellerId,
-//     createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-//   });
-
-//   return used;
 // };
 
 // // ================= UPDATE PRODUCT =================
@@ -851,13 +327,13 @@
 //       attributes: { ...rest },
 //     };
 
-//     if (req.files && req.files.length > 0) {
-//       const uploadPromises = req.files.map((file) => {
+//     if (req.files?.length) {
+//       const uploads = req.files.map((file) => {
 //         return new Promise((resolve, reject) => {
 //           const stream = cloudinary.uploader.upload_stream(
 //             { folder: "products" },
-//             (error, result) => {
-//               if (error) return reject(error);
+//             (err, result) => {
+//               if (err) return reject(err);
 
 //               resolve({
 //                 url: result.secure_url,
@@ -870,7 +346,7 @@
 //         });
 //       });
 
-//       updateData.imageUrls = await Promise.all(uploadPromises);
+//       updateData.imageUrls = await Promise.all(uploads);
 //     }
 
 //     const product = await Product.findOneAndUpdate(
@@ -901,14 +377,12 @@
 //       return res.status(404).json({ message: "Product not found" });
 //     }
 
-//     if (product.imageUrls?.length > 0) {
-//       const deletePromises = product.imageUrls.map((img) => {
-//         if (img.public_id) {
-//           return cloudinary.uploader.destroy(img.public_id);
-//         }
-//       });
-
-//       await Promise.all(deletePromises);
+//     if (product.imageUrls?.length) {
+//       await Promise.all(
+//         product.imageUrls.map((img) =>
+//           img.public_id ? cloudinary.uploader.destroy(img.public_id) : null
+//         )
+//       );
 //     }
 
 //     await product.deleteOne();
@@ -921,16 +395,21 @@
 //   }
 // };
 
-// // ================= GET LIMIT + CREDITS =================
+// // ================= LIMIT API =================
 // const getSellerProductLimit = async (req, res) => {
 //   try {
 //     const sellerId = req.seller.id;
 
 //     const seller = await Seller.findById(sellerId);
 
+//     if (!seller) {
+//       return res.status(404).json({ message: "Seller not found" });
+//     }
+
+//     const FREE_LIMIT = 20;
 //     const used = await getMonthlyUsage(sellerId);
 
-//     return res.json({
+//     res.json({
 //       freeLimit: FREE_LIMIT,
 //       used,
 //       remainingFree: Math.max(FREE_LIMIT - used, 0),
@@ -951,172 +430,35 @@
 //   updateProduct,
 //   deleteProduct,
 //   getSellerProductLimit,
-// }; 
+// };
 
 
 
-const sharp = require("sharp");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const Product = require("../models/Product");
-const Seller = require("../models/seller");
 const cloudinary = require("../config/cloudinary");
 const streamifier = require("streamifier");
 
-// ================= COMMON UTIL =================
-const getMonthlyRange = () => {
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-
-  const endOfMonth = new Date();
-  endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-  endOfMonth.setDate(0);
-  endOfMonth.setHours(23, 59, 59, 999);
-
-  return { startOfMonth, endOfMonth };
-};
-
-const getMonthlyUsage = async (sellerId) => {
-  const { startOfMonth, endOfMonth } = getMonthlyRange();
-
-  return Product.countDocuments({
-    sellerId,
-    createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-  });
-};
-
-// ================= GET PRODUCT BY ID =================
-const getProductById = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id)
-      .populate("sellerId", "name shopName email phone logo location");
-
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    res.status(200).json(product);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// ================= GET ALL PRODUCTS =================
-const getAllProducts = async (req, res) => {
-  try {
-    const products = await Product.find().populate("sellerId");
-    res.status(200).json(products);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-
-
-// const getAllProducts = async (req, res) => {
-//   try {
-
-//     // ================= PAGINATION =================
-//     const page = parseInt(req.query.page) || 1;
-
-//     const limit = parseInt(req.query.limit) || 20;
-
-//     const skip = (page - 1) * limit;
-
-//     // ================= FILTERS =================
-//     const category = req.query.category;
-
-//     const search = req.query.search;
-
-//     let filter = {};
-
-//     // CATEGORY FILTER
-//     if (category) {
-//       filter.category = category;
-//     }
-
-//     // SEARCH FILTER
-//     if (search) {
-//       filter.name = {
-//         $regex: search,
-//         $options: "i",
-//       };
-//     }
-
-//     // ================= GET PRODUCTS =================
-//     const products = await Product.find(filter)
-
-//       // ONLY REQUIRED FIELDS
-//       .select(
-//         "name desc category totalPrice discountPrice imageUrls featured deliveryAvailable sellerId createdAt"
-//       )
-
-//       // POPULATE ONLY NEEDED DATA
-//       .populate(
-//         "sellerId",
-//         "shopName logo location"
-//       )
-
-//       // NEWEST FIRST
-//       .sort({ createdAt: -1 })
-
-//       // PAGINATION
-//       .skip(skip)
-
-//       .limit(limit)
-
-//       // PERFORMANCE BOOST
-//       .lean();
-
-//     // ================= TOTAL PRODUCTS =================
-//     const totalProducts =
-//       await Product.countDocuments(filter);
-
-//     // ================= RESPONSE =================
-//     res.status(200).json({
-//       success: true,
-
-//       currentPage: page,
-
-//       totalPages: Math.ceil(
-//         totalProducts / limit
-//       ),
-
-//       totalProducts,
-
-//       products,
-//     });
-
-//   } catch (err) {
-
-//     console.error(err);
-
-//     res.status(500).json({
-//       success: false,
-//       message: err.message,
-//     });
-
-//   }
-// };
-
-// ================= GET SELLER PRODUCTS =================
-const getSellerProducts = async (req, res) => {
-  try {
-    if (!req.seller?.id) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const products = await Product.find({
-      sellerId: req.seller.id,
-    }).populate("sellerId", "shopName logo");
-
-    res.status(200).json(products);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
 // ================= CREATE PRODUCT =================
-const createProduct = async (req, res) => {
+exports.createProduct = async (req, res) => {
+  console.log("Creating product with data:", req.body);
   try {
     const {
       name,
@@ -1126,82 +468,17 @@ const createProduct = async (req, res) => {
       discountPrice,
       featured,
       deliveryAvailable,
-      ...rest
+      city,
+      ...attributes
     } = req.body;
 
-    // ================= AUTH =================
-    if (!req.seller?.id) {
-      return res.status(401).json({ message: "Unauthorized" });
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
     }
 
-    const sellerId = req.seller.id;
-
-    const seller = await Seller.findById(sellerId);
-
-    if (!seller) {
-      return res.status(404).json({ message: "Seller not found" });
-    }
-
-    // ================= BOOLEAN FIX =================
-    const isFeatured = featured === true || featured === "true";
-    const isDelivery = deliveryAvailable === true || deliveryAvailable === "true";
-
-    // ================= FREE LIMIT =================
-    const FREE_LIMIT = 20;
-    const used = await getMonthlyUsage(sellerId);
-
-    let isPaid = false;
-
-    // ================= CREDIT SYSTEM (STRICT NO MIXING) =================
-    if (used >= FREE_LIMIT) {
-
-      // ❗ STRICT RULE:
-      // featured → ONLY featured credits
-      // normal → ONLY normal credits
-
-      if (isFeatured) {
-        const updatedSeller = await Seller.findOneAndUpdate(
-          {
-            _id: sellerId,
-            "listingCredits.featured": { $gt: 0 }
-          },
-          {
-            $inc: { "listingCredits.featured": -1 }
-          },
-          { new: true }
-        );
-
-        if (!updatedSeller) {
-          return res.status(403).json({
-            success: false,
-            message: "No featured credits left. Please purchase featured plan."
-          });
-        }
-
-      } else {
-        const updatedSeller = await Seller.findOneAndUpdate(
-          {
-            _id: sellerId,
-            "listingCredits.normal": { $gt: 0 }
-          },
-          {
-            $inc: { "listingCredits.normal": -1 }
-          },
-          { new: true }
-        );
-
-        if (!updatedSeller) {
-          return res.status(403).json({
-            success: false,
-            message: "No normal credits left. Please purchase normal plan."
-          });
-        }
-      }
-
-      isPaid = true;
-    }
-
-    // ================= IMAGE UPLOAD =================
     let imageUrls = [];
 
     if (req.files?.length) {
@@ -1219,172 +496,122 @@ const createProduct = async (req, res) => {
             }
           );
 
-          streamifier.createReadStream(file.buffer).pipe(stream);
+          require("streamifier")
+            .createReadStream(file.buffer)
+            .pipe(stream);
         });
       });
 
       imageUrls = await Promise.all(uploads);
     }
 
-    // ================= CREATE PRODUCT =================
     const product = new Product({
       name,
       desc,
       category,
       totalPrice,
       discountPrice,
-      featured: isFeatured,            // FIXED
-      deliveryAvailable: isDelivery,  // FIXED
-      sellerId,
+      featured: featured === "true" || featured === true,
+      deliveryAvailable:
+        deliveryAvailable === "true" ||
+        deliveryAvailable === true,
+      city,
+      userId: req.user.id,
       imageUrls,
-      attributes: { ...rest },
-      expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
-      isPaid,
+      attributes,
     });
 
     await product.save();
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
-      message: "Product created successfully",
       product,
     });
-
   } catch (err) {
-    console.error("Create product error:", err);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: err.message,
     });
   }
 };
-
-// ================= UPDATE PRODUCT =================
-const updateProduct = async (req, res) => {
+exports.getProducts = async (req, res) => {
   try {
-    const {
-      name,
-      desc,
-      category,
-      totalPrice,
-      discountPrice,
-      featured,
-      deliveryAvailable,
-      ...rest
-    } = req.body;
+    const { status = "active", category, city } = req.query;
 
-    let updateData = {
-      name,
-      desc,
-      category,
-      totalPrice,
-      discountPrice,
-      featured,
-      deliveryAvailable,
-      attributes: { ...rest },
-    };
+    const filter = {};
 
-    if (req.files?.length) {
-      const uploads = req.files.map((file) => {
-        return new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "products" },
-            (err, result) => {
-              if (err) return reject(err);
+    if (status) filter.status = status;
+    if (category) filter.category = category;
+    if (city) filter.city = city;
 
-              resolve({
-                url: result.secure_url,
-                public_id: result.public_id,
-              });
-            }
-          );
+    const products = await Product.find(filter)
+      .populate("userId", "name email phone")
+      .sort({ createdAt: -1 });
 
-          streamifier.createReadStream(file.buffer).pipe(stream);
-        });
-      });
-
-      updateData.imageUrls = await Promise.all(uploads);
-    }
-
-    const product = await Product.findOneAndUpdate(
-      { _id: req.params.id, sellerId: req.seller.id },
-      updateData,
-      { new: true }
-    );
-
-    if (!product) {
-      return res.status(404).json({ message: "Not found or unauthorized" });
-    }
-
-    res.status(200).json(product);
+    res.json({
+      success: true,
+      products,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
-
-// ================= DELETE PRODUCT =================
-const deleteProduct = async (req, res) => {
+exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findOne({
-      _id: req.params.id,
-      sellerId: req.seller.id,
-    });
+    const product = await Product.findById(
+      req.params.id
+    ).populate("userId", "name email phone");
 
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
     }
 
-    if (product.imageUrls?.length) {
-      await Promise.all(
-        product.imageUrls.map((img) =>
-          img.public_id ? cloudinary.uploader.destroy(img.public_id) : null
-        )
-      );
+    res.json({
+      success: true,
+      product,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+}; 
+exports.deleteProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    if (product.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    // delete images from cloudinary
+    for (const img of product.imageUrls) {
+      if (img.public_id) {
+        await cloudinary.uploader.destroy(img.public_id);
+      }
     }
 
     await product.deleteOne();
 
-    res.status(200).json({
-      message: "Product and images deleted successfully",
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// ================= LIMIT API =================
-const getSellerProductLimit = async (req, res) => {
-  try {
-    const sellerId = req.seller.id;
-
-    const seller = await Seller.findById(sellerId);
-
-    if (!seller) {
-      return res.status(404).json({ message: "Seller not found" });
-    }
-
-    const FREE_LIMIT = 20;
-    const used = await getMonthlyUsage(sellerId);
-
     res.json({
-      freeLimit: FREE_LIMIT,
-      used,
-      remainingFree: Math.max(FREE_LIMIT - used, 0),
-      paidCredits: seller.listingCredits,
+      success: true,
+      message: "Product deleted",
     });
-
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
-};
-
-// ================= EXPORT =================
-module.exports = {
-  getAllProducts,
-  getProductById,
-  getSellerProducts,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  getSellerProductLimit,
 };

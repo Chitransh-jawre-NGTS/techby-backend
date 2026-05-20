@@ -1,20 +1,32 @@
 const jwt = require("jsonwebtoken");
 
 const userMiddleware = async (req, res, next) => {
-  try {
-    const token = req.headers.authorization;
+  console.log("User Middleware Invoked");
+  console.log("Authorization Header:", req.headers.authorization);
 
-    if (!token) {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
       return res.status(401).json({
         success: false,
         message: "No token found",
       });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
+    // ✅ Extract token from "Bearer <token>"
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : authHeader;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Token missing",
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     req.user = decoded;
 

@@ -1,27 +1,5 @@
-// const jwt = require("jsonwebtoken");
-// const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
-// const sellerAuth = (req, res, next) => {
-//   const token = req.cookies?.sellerToken || req.headers.authorization?.split(' ')[1]; // ✅ Check both cookie and header
 
-//   if (!token) {
-//     return res.status(401).json({ message: "Unauthorized" });
-//   }
-
-//   try {
-//     const decoded = jwt.verify(token, JWT_SECRET);
-
-//     // Attach seller info to request
-//     req.seller = decoded;
-
-//     next();
-//   } catch (err) {
-//     return res.status(401).json({ message: "Invalid token" });
-//   }
-// };
-
-// module.exports = sellerAuth;
-// middleware/authMiddleware.js
 const jwt = require("jsonwebtoken");
 const Seller = require("../models/seller");
 
@@ -49,4 +27,54 @@ const sellerAuth = async (req, res, next) => {
   }
 };
 
-module.exports = sellerAuth;
+module.exports = sellerAuth; 
+
+
+
+
+// const jwt = require("jsonwebtoken");
+// const User = require("../models/User");
+
+// const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
+
+// const userAuth = async (req, res, next) => {
+//   const authHeader = req.headers.authorization;
+
+//   // CHECK TOKEN
+//   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+//     return res.status(401).json({
+//       message: "No token provided",
+//     });
+//   }
+
+//   // GET TOKEN
+//   const token = authHeader.split(" ")[1];
+
+//   try {
+//     // VERIFY TOKEN
+//     const decoded = jwt.verify(token, JWT_SECRET);
+
+//     // FIND USER
+//     const user = await User.findById(decoded.id).select("-password");
+
+//     if (!user) {
+//       return res.status(401).json({
+//         message: "User not found",
+//       });
+//     }
+
+//     // ATTACH USER
+//     req.user = user;
+
+//     next();
+
+//   } catch (error) {
+
+//     return res.status(401).json({
+//       message: "Invalid or expired token",
+//     });
+
+//   }
+// };
+
+// module.exports = userAuth;

@@ -20,7 +20,9 @@
     "dotenv": "^17.2.2",
     "emailjs-com": "^3.2.0",
     "express": "^5.1.0",
-    "firebase-admin": "^13.5.0",
+    "express-rate-limit": "^8.5.2",
+    "firebase-admin": "^13.10.0",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mailersend": "^2.6.0",
     "mongodb": "^7.1.0",
@@ -31,7 +33,7 @@
     "nodemailer": "^7.0.6",
     "razorpay": "^2.9.6",
     "sharp": "^0.34.5",
-    "socket.io": "^4.8.1",
+    "socket.io": "^4.8.3",
     "streamifier": "^0.1.1"
   },
   "devDependencies": {
