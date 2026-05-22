@@ -49,9 +49,42 @@ exports.getConversations = async (req, res) => {
     })
       .sort({ updatedAt: -1 })
       .populate("participants", "name email phone")
+      .populate("productId")
       .lean();
 
     return res.json(chats);
+  } catch (err) {
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
+  }
+};
+
+// ================= MARK AS READ =================
+exports.markAsRead = async (req, res) => {
+  try {
+    return res.json({
+      message: "Messages marked as read",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
+  }
+};
+
+// ================= DELETE MESSAGE =================
+exports.deleteMessage = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await Message.findByIdAndDelete(id);
+
+    return res.json({
+      message: "Message deleted",
+    });
   } catch (err) {
     return res.status(500).json({
       message: "Server error",

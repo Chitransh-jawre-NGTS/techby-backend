@@ -1,3 +1,7 @@
+// ======================================================
+// MODELS/ConversationModel.js
+// ======================================================
+
 const mongoose = require("mongoose");
 
 const conversationSchema = new mongoose.Schema(
@@ -6,6 +10,7 @@ const conversationSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
+        required: true,
       },
     ],
 
@@ -16,12 +21,40 @@ const conversationSchema = new mongoose.Schema(
     },
 
     lastMessage: {
-      text: String,
-      senderId: String,
-      createdAt: Date,
+      text: {
+        type: String,
+        default: "",
+      },
+
+      senderId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+
+    unreadCount: {
+      type: Number,
+      default: 0,
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-module.exports = mongoose.model("Conversation", conversationSchema);
+conversationSchema.index({ participants: 1 });
+
+module.exports = mongoose.model(
+  "Conversation",
+  conversationSchema
+);

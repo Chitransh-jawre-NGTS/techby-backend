@@ -455,10 +455,12 @@
 const Product = require("../models/Product");
 const cloudinary = require("../config/cloudinary");
 const streamifier = require("streamifier");
+const User = require("../models/User");
 
 // ================= CREATE PRODUCT =================
 exports.createProduct = async (req, res) => {
   console.log("Creating product with data:", req.body);
+
   try {
     const {
       name,
@@ -479,6 +481,17 @@ exports.createProduct = async (req, res) => {
       });
     }
 
+    // ================= FIND USER =================
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // ================= IMAGE UPLOAD =================
     let imageUrls = [];
 
     if (req.files?.length) {
@@ -505,6 +518,7 @@ exports.createProduct = async (req, res) => {
       imageUrls = await Promise.all(uploads);
     }
 
+    // ================= CREATE PRODUCT =================
     const product = new Product({
       name,
       desc,
@@ -523,12 +537,43 @@ exports.createProduct = async (req, res) => {
 
     await product.save();
 
-    res.status(201).json({
+    // ================= CHECK FIRST PRODUCT =================
+    const productCount = await Product.countDocuments({
+      userId: req.user.id,
+    });
+
+    if (productCount === 1) {
+      user.hasPostedFirstProduct = true;
+
+      // ================= REWARD USER B (OWNER) =================
+      user.coins += 10;
+
+      // ================= REFERRAL LOGIC =================
+      if (user.referredBy && !user.referralRewarded) {
+        const refUser = await User.findOne({
+          referralCode: user.referredBy,
+        });
+
+        if (refUser) {
+          // 🟢 Reward User A (referrer)
+          refUser.coins += 20;
+          await refUser.save();
+
+          user.referralRewarded = true;
+        }
+      }
+
+      await user.save();
+    }
+
+    return res.status(201).json({
       success: true,
       product,
     });
   } catch (err) {
-    res.status(500).json({
+    console.log(err);
+
+    return res.status(500).json({
       success: false,
       message: err.message,
     });
@@ -607,6 +652,29 @@ exports.deleteProduct = async (req, res) => {
     res.json({
       success: true,
       message: "Product deleted",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+// ================= GET MY PRODUCTS =================
+exports.getMyProducts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const products = await Product.find({
+      userId,
+    })
+      .populate("userId", "name email phone")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: products.length,
+      products,
     });
   } catch (err) {
     res.status(500).json({

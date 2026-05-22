@@ -1,8 +1,6 @@
 const jwt = require("jsonwebtoken");
 
 const userMiddleware = async (req, res, next) => {
-  console.log("User Middleware Invoked");
-  console.log("Authorization Header:", req.headers.authorization);
 
   try {
     const authHeader = req.headers.authorization;

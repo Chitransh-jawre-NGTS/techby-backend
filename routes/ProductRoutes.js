@@ -33,6 +33,7 @@ const {
   getProducts,
   getProductById,
   deleteProduct,
+  getMyProducts
 } = require("../controllers/ProductController");
 
 const auth = require("../middleware/userMiddleware");
@@ -45,6 +46,9 @@ router.post(
   upload.array("images"),
   createProduct
 );
+
+router.get(
+  "/my-products",auth, getMyProducts);
 
 // GET ALL
 router.get("/", getProducts);
