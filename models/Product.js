@@ -36,6 +36,12 @@
 
 // module.exports = mongoose.model("Product", productSchema);
 
+
+
+
+
+
+
 const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
@@ -56,10 +62,24 @@ const productSchema = new mongoose.Schema(
     ],
 
     attributes: {
-      type: Map,
-      of: String,
-      default: {},
-    },
+  brand: String,
+  model: String,
+  storage: String,
+  ram: String,
+  condition: String,
+  color: String,
+
+  location: {
+    city: String,
+    state: String,
+    district: String,
+    country: String,
+    postalCode: String,
+    lat: String,
+    lng: String,
+    display_name: String,
+  }
+},
 
     featured: { type: Boolean, default: false },
     deliveryAvailable: { type: Boolean, default: false },

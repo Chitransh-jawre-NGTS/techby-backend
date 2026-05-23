@@ -462,17 +462,23 @@ exports.createProduct = async (req, res) => {
   console.log("Creating product with data:", req.body);
 
   try {
-    const {
-      name,
-      desc,
-      category,
-      totalPrice,
-      discountPrice,
-      featured,
-      deliveryAvailable,
-      city,
-      ...attributes
-    } = req.body;
+   const {
+  name,
+  desc,
+  category,
+  totalPrice,
+  discountPrice,
+  featured,
+  deliveryAvailable,
+  city,
+  state,
+  district,
+  country,
+  postalCode,
+  lat,
+  lng,
+  ...attributes
+} = req.body;
 
     if (!req.user?.id) {
       return res.status(401).json({
@@ -489,6 +495,15 @@ exports.createProduct = async (req, res) => {
         success: false,
         message: "User not found",
       });
+    }
+
+    // ================= PARSE LOCATION (FIX BUG) =================
+    let parsedLocation = {};
+
+    try {
+      parsedLocation = location ? JSON.parse(location) : {};
+    } catch (err) {
+      parsedLocation = {};
     }
 
     // ================= IMAGE UPLOAD =================
@@ -519,25 +534,34 @@ exports.createProduct = async (req, res) => {
     }
 
     // ================= CREATE PRODUCT =================
-    const product = new Product({
-      name,
-      desc,
-      category,
-      totalPrice,
-      discountPrice,
-      featured: featured === "true" || featured === true,
-      deliveryAvailable:
-        deliveryAvailable === "true" ||
-        deliveryAvailable === true,
+   const product = new Product({
+  name,
+  desc,
+  category,
+  totalPrice,
+  discountPrice,
+  featured: featured === "true" || featured === true,
+  deliveryAvailable: deliveryAvailable === "true" || deliveryAvailable === true,
+  city,
+  attributes: {
+    ...attributes,
+    location: {
       city,
-      userId: req.user.id,
-      imageUrls,
-      attributes,
-    });
+      state,
+      district,
+      country,
+      postalCode,
+      lat,
+      lng,
+    },
+  },
+  userId: req.user.id,
+  imageUrls,
+});
 
     await product.save();
 
-    // ================= CHECK FIRST PRODUCT =================
+    // ================= FIRST PRODUCT LOGIC =================
     const productCount = await Product.countDocuments({
       userId: req.user.id,
     });
@@ -545,7 +569,7 @@ exports.createProduct = async (req, res) => {
     if (productCount === 1) {
       user.hasPostedFirstProduct = true;
 
-      // ================= REWARD USER B (OWNER) =================
+      // ================= OWNER BONUS =================
       user.coins += 10;
 
       // ================= REFERRAL LOGIC =================
@@ -555,7 +579,7 @@ exports.createProduct = async (req, res) => {
         });
 
         if (refUser) {
-          // 🟢 Reward User A (referrer)
+          // reward referrer
           refUser.coins += 20;
           await refUser.save();
 
@@ -579,26 +603,91 @@ exports.createProduct = async (req, res) => {
     });
   }
 };
+// exports.getProducts = async (req, res) => {
+//   try {
+//     const { status = "active", category, city } = req.query;
+
+//     const filter = {};
+
+//     if (status) filter.status = status;
+//     if (category) filter.category = category;
+//     if (city) filter.city = city;
+
+//     const products = await Product.find(filter)
+//       .populate("userId", "name email phone")
+//       .sort({ createdAt: -1 });
+
+//     res.json({
+//       success: true,
+//       products,
+//     });
+//   } catch (err) {
+//     res.status(500).json({
+//       success: false,
+//       message: err.message,
+//     });
+//   }
+// };
+
 exports.getProducts = async (req, res) => {
   try {
-    const { status = "active", category, city } = req.query;
+    const { lat, lng } = req.query;
 
-    const filter = {};
+    const products = await Product.find();
 
-    if (status) filter.status = status;
-    if (category) filter.category = category;
-    if (city) filter.city = city;
+    if (!lat || !lng) {
+      return res.json({ success: true, products });
+    }
 
-    const products = await Product.find(filter)
-      .populate("userId", "name email phone")
-      .sort({ createdAt: -1 });
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
 
-    res.json({
+    // distance function (Haversine formula)
+    const getDistance = (lat1, lon1, lat2, lon2) => {
+      const toRad = (value) => (value * Math.PI) / 180;
+
+      const R = 6371; // km
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) *
+          Math.cos(toRad(lat2)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c;
+    };
+
+    const filtered = products.filter((p) => {
+      const loc = p.attributes?.location;
+
+      if (!loc) return false;
+
+      const location =
+        typeof loc === "string" ? JSON.parse(loc) : loc;
+
+      if (!location?.lat || !location?.lng) return false;
+
+      const distance = getDistance(
+        userLat,
+        userLng,
+        parseFloat(location.lat),
+        parseFloat(location.lng)
+      );
+
+      return distance <= 100; // 🔥 100 KM radius
+    });
+
+    return res.json({
       success: true,
-      products,
+      products: filtered,
     });
   } catch (err) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: err.message,
     });
