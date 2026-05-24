@@ -33,7 +33,8 @@ const {
   getProducts,
   getProductById,
   deleteProduct,
-  getMyProducts
+  getMyProducts,
+   updateProduct
 } = require("../controllers/ProductController");
 
 const auth = require("../middleware/userMiddleware");
@@ -58,5 +59,11 @@ router.get("/:id", getProductById);
 
 // DELETE
 router.delete("/:id", auth, deleteProduct);
+router.put(
+  "/update/:id",
+  auth,
+  upload.array("images", 6),
+  updateProduct
+);
 
 module.exports = router;

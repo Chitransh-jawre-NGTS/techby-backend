@@ -603,31 +603,7 @@ exports.createProduct = async (req, res) => {
     });
   }
 };
-// exports.getProducts = async (req, res) => {
-//   try {
-//     const { status = "active", category, city } = req.query;
 
-//     const filter = {};
-
-//     if (status) filter.status = status;
-//     if (category) filter.category = category;
-//     if (city) filter.city = city;
-
-//     const products = await Product.find(filter)
-//       .populate("userId", "name email phone")
-//       .sort({ createdAt: -1 });
-
-//     res.json({
-//       success: true,
-//       products,
-//     });
-//   } catch (err) {
-//     res.status(500).json({
-//       success: false,
-//       message: err.message,
-//     });
-//   }
-// };
 
 exports.getProducts = async (req, res) => {
   try {
@@ -717,33 +693,71 @@ exports.getProductById = async (req, res) => {
     });
   }
 }; 
-exports.deleteProduct = async (req, res) => {
+// ================= DELETE PRODUCT =================
+exports.deleteProduct = async (
+  req,
+  res
+) => {
   try {
-    const product = await Product.findById(req.params.id);
+
+    const product =
+      await Product.findById(
+        req.params.id
+      );
 
     if (!product) {
-      return res.status(404).json({ message: "Not found" });
+      return res.status(404).json({
+        success: false,
+        message:
+          "Product not found",
+      });
     }
 
-    if (product.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Not allowed" });
+    // ================= CHECK OWNER =================
+    if (
+      product.userId.toString() !==
+      req.user.id
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not allowed",
+      });
     }
 
-    // delete images from cloudinary
-    for (const img of product.imageUrls) {
-      if (img.public_id) {
-        await cloudinary.uploader.destroy(img.public_id);
+    // ================= DELETE CLOUDINARY IMAGES =================
+    if (
+      product.imageUrls?.length >
+      0
+    ) {
+
+      for (const image of product.imageUrls) {
+
+        if (image.public_id) {
+
+          await cloudinary.uploader.destroy(
+            image.public_id
+          );
+
+        }
       }
     }
 
-    await product.deleteOne();
+    // ================= DELETE PRODUCT =================
+    await Product.findByIdAndDelete(
+      req.params.id
+    );
 
-    res.json({
+    return res.status(200).json({
       success: true,
-      message: "Product deleted",
+      message:
+        "Product deleted successfully",
     });
+
   } catch (err) {
-    res.status(500).json({
+
+    console.log(err);
+
+    return res.status(500).json({
       success: false,
       message: err.message,
     });
@@ -767,6 +781,173 @@ exports.getMyProducts = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+  // ================= UPDATE PRODUCT =================
+exports.updateProduct = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    // ================= CHECK OWNER =================
+    if (
+      product.userId.toString() !==
+      req.user.id
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+
+    // ================= GET DATA =================
+    const {
+      name,
+      desc,
+      category,
+      totalPrice,
+      discountPrice,
+      featured,
+      deliveryAvailable,
+      city,
+      state,
+      district,
+      country,
+      postalCode,
+      lat,
+      lng,
+      ...attributes
+    } = req.body;
+
+    // ================= IMAGE UPDATE =================
+    let imageUrls = product.imageUrls;
+
+    // IF NEW IMAGES PROVIDED
+    if (req.files?.length > 0) {
+
+      // DELETE OLD CLOUDINARY IMAGES
+      for (const img of product.imageUrls) {
+        if (img.public_id) {
+          await cloudinary.uploader.destroy(
+            img.public_id
+          );
+        }
+      }
+
+      // UPLOAD NEW IMAGES
+      const uploads = req.files.map(
+        (file) => {
+          return new Promise(
+            (resolve, reject) => {
+              const stream =
+                cloudinary.uploader.upload_stream(
+                  {
+                    folder:
+                      "products",
+                  },
+                  (
+                    err,
+                    result
+                  ) => {
+                    if (err)
+                      return reject(
+                        err
+                      );
+
+                    resolve({
+                      url: result.secure_url,
+                      public_id:
+                        result.public_id,
+                    });
+                  }
+                );
+
+              streamifier
+                .createReadStream(
+                  file.buffer
+                )
+                .pipe(stream);
+            }
+          );
+        }
+      );
+
+      imageUrls =
+        await Promise.all(uploads);
+    }
+
+    // ================= UPDATE PRODUCT =================
+    product.name = name || product.name;
+
+    product.desc = desc || product.desc;
+
+    product.category =
+      category || product.category;
+
+    product.totalPrice =
+      totalPrice ||
+      product.totalPrice;
+
+    product.discountPrice =
+      discountPrice ||
+      product.discountPrice;
+
+    product.featured =
+      featured === "true" ||
+      featured === true;
+
+    product.deliveryAvailable =
+      deliveryAvailable ===
+        "true" ||
+      deliveryAvailable === true;
+
+    product.city =
+      city || product.city;
+
+    // ================= LOCATION =================
+    product.attributes = {
+      ...product.attributes,
+      ...attributes,
+
+      location: {
+        city,
+        state,
+        district,
+        country,
+        postalCode,
+        lat,
+        lng,
+      },
+    };
+
+    // ================= SAVE IMAGES =================
+    product.imageUrls = imageUrls;
+
+    await product.save();
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Product updated successfully",
+      product,
+    });
+
+  } catch (err) {
+
+    console.log(err);
+
+    return res.status(500).json({
       success: false,
       message: err.message,
     });
