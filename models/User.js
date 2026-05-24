@@ -50,7 +50,12 @@ const userSchema = new mongoose.Schema(
 
     email: { type: String, required: true, unique: true },
 
-    phone: { type: String, default: "" },
+   phone: {
+  type: String,
+  unique: true,
+  sparse: true,
+  default: null,
+},
 
     coins: { type: Number, default: 0 },
 

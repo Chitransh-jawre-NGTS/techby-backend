@@ -268,9 +268,9 @@ exports.signup = async (req, res) => {
         `${decoded.uid}@techby.com`,
 
       phone:
-        phone ||
-        decoded.phone_number ||
-        "",
+  phone ||
+  decoded.phone_number ||
+  null,
 
       profileImage:
         decoded.picture || "",
@@ -350,7 +350,7 @@ exports.login = async (req, res) => {
           `${decoded.uid}@techby.com`,
 
         phone:
-          decoded.phone_number || "",
+  decoded.phone_number || null,
 
         profileImage:
           decoded.picture || "",
